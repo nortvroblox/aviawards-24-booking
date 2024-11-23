@@ -1,0 +1,23 @@
+{
+  "name": "RobloxProjectTemplate",
+  "emitLegacyScripts": false,
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "BookingPackages": {
+        "$path": "Packages"
+      },
+      "BookingClient": {
+        "$path": "dist/Client"
+      },
+      "BookingCommon": {
+        "$path": "dist/Common"
+      }
+    },
+    "ServerScriptService": {
+      "BookingServer": {
+        "$path": "dist/Server"
+      }
+    }
+  }
+}

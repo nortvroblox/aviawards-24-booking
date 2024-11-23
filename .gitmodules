@@ -1,0 +1,3 @@
+[submodule "src/Common/PluginEssentials"]
+	path = src/Common/PluginEssentials
+	url = https://github.com/mvyasu/PluginEssentials.git
