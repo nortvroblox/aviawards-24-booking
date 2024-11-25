@@ -50,9 +50,16 @@ return function(payload: UIControllerD.UIPayload)
 	local currentCamera = workspace.CurrentCamera
 
 	local seatHoldingService = Knit.GetService("SeatHoldingService")
+	local seatPurchasingService = Knit.GetService("SeatPurchasingService")
+
+	local playerOwnSeat = Fusion.Value(false)
 
 	local shouldDisplay = Fusion.Computed(function()
-		return currentRoute:get() == "/select-seat/" and currentParams:get().section ~= nil
+		return (currentRoute:get() == "/select-seat/" and currentParams:get().section ~= nil) or playerOwnSeat:get()
+	end)
+
+	seatPurchasingService.PlayerOwnSeat:Observe(function(seatData)
+		playerOwnSeat:set(seatData)
 	end)
 
 	--// note: originally it's made with fusion's forvalue, but it's way too slow
@@ -67,15 +74,24 @@ return function(payload: UIControllerD.UIPayload)
 		end
 		previousDot = {}
 		if shouldDisplay:get() then
-			local targetSeats = CollectionService:GetTagged("Section" .. currentParams:get().section)
-			for _, seat in ipairs(targetSeats) do
+			local section = currentParams:get().section
+			if playerOwnSeat:get() then
+				section = "AASeat"
+			else
+				section = "Section" .. section
+			end
+
+			for _, seat in ipairs(CollectionService:GetTagged(section)) do
 				local isAvailable = true
 				local dot = TemplateDot()
+				local updatePosition = function()
+					local seatIn2DSpace = currentCamera:WorldToViewportPoint(seat.Position)
+					dot.Position = UDim2.fromOffset(seatIn2DSpace.X, seatIn2DSpace.Y)
+				end
 				table.insert(
 					previousConnections,
 					seat:GetPropertyChangedSignal("CFrame"):Connect(function()
-						local seatIn2DSpace = currentCamera:WorldToViewportPoint(seat.Position)
-						dot.Position = UDim2.fromOffset(seatIn2DSpace.X, seatIn2DSpace.Y)
+						updatePosition()
 					end)
 				)
 				table.insert(
@@ -84,6 +100,10 @@ return function(payload: UIControllerD.UIPayload)
 						if not isAvailable then
 							return
 						end
+						if playerOwnSeat:get() then
+							return
+						end
+
 						PlaySoundEffect("click")
 						Producer.navigateTo("/select-seat/", {
 							section = currentParams:get().section,
@@ -107,7 +127,6 @@ return function(payload: UIControllerD.UIPayload)
 					then
 						isAvailable = false
 					end
-
 					if not isAvailable then
 						primaryColor = Color3.fromRGB(127, 125, 117)
 					else
@@ -118,6 +137,7 @@ return function(payload: UIControllerD.UIPayload)
 				end
 
 				updateDotColor()
+				updatePosition()
 				table.insert(previousConnections, seatHoldingService.SeatsOnHold:Observe(updateDotColor))
 				table.insert(previousConnections, seatHoldingService.PurchasedSeats:Observe(updateDotColor))
 				dot.Parent = selectSeat
@@ -128,4 +148,5 @@ return function(payload: UIControllerD.UIPayload)
 
 	updateDots()
 	Fusion.Observer(shouldDisplay):onChange(updateDots)
+	seatPurchasingService.PlayerOwnSeat:Observe(updateDots)
 end
