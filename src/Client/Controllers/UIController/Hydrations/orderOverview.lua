@@ -62,9 +62,7 @@ return function(payload: UIControllerD.UIPayload)
 		Visible = Fusion.Computed(function()
 			return math.round(transparencySpring:get() * 100) < 100
 		end),
-		BackgroundTransparency = Fusion.Computed(function()
-			return Remap(transparencySpring:get(), 0, 1, 0.5, 1)
-		end),
+		BackgroundTransparency = 1,
 	})
 
 	Fusion.Hydrate(seatInfoWrapper.SeatInfo.SeatLocation)({
